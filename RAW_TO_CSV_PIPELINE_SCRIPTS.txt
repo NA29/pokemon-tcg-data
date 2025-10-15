@@ -1,0 +1,31 @@
+// need to install 'jq' to run these scripts in the terminal
+
+1. Parse all card files and make json
+
+for f in cards/en/*.json; do
+  jq --arg set_id "$(basename "$f" .json)" '
+    .[] | .set_id = $set_id
+  ' "$f"
+done | jq -s '.' > all_cards.json
+
+
+2. Extract useful columns and turn into CSV
+
+jq -r '
+  (["id","name","set_id","number","rarity","supertype","types","hp","evolvesFrom","artist","images_small","images_large"] | @csv),
+  (.[] | [
+    .id,
+    .name,
+    .set_id,
+    (.number // ""),
+    .rarity,
+    .supertype,
+    ((.types // []) | join(";")),
+    (.hp // ""),
+    (.evolvesFrom // ""),
+    (.artist // ""),
+    (.images.small // ""),
+    (.images.large // "")
+  ] | @csv)
+' all_cards.json > all_cards.csv
+
